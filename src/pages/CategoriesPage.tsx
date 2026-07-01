@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
-import { categoriesList } from '../data/mockData';
+import { listCategories, createCategory, deleteCategory, Category } from '../api/categories';
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState(categoriesList);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [icon, setIcon] = useState('');
 
-  const remove = (id: string) => {
-    // TODO: call DELETE /api/categories/:id
-    setCategories((prev) => prev.filter((c) => c.id !== id));
+  const load = () => listCategories().then(setCategories).catch(console.error);
+
+  useEffect(() => { load(); }, []);
+
+  const remove = async (id: string) => {
+    await deleteCategory(id);
+    load();
+  };
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    await createCategory({ name, slug, icon: icon || undefined });
+    setName('');
+    setSlug('');
+    setIcon('');
+    setShowForm(false);
+    load();
   };
 
   return (
@@ -18,11 +36,22 @@ export default function CategoriesPage() {
           <h1 className="text-2xl font-bold text-textPrimary">Categories</h1>
           <p className="mt-1 text-sm text-textSecondary">Organize problems and solutions by topic.</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowForm((v) => !v)}>
           <Plus size={16} />
           New category
         </Button>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="rounded-xl2 border border-cardBorder bg-card p-5 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <input value={name} onChange={(e) => { setName(e.target.value); setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-')); }} placeholder="Name" className="h-10 rounded-lg border border-cardBorder bg-bgElevated px-3 text-sm text-textPrimary" />
+            <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="slug" className="h-10 rounded-lg border border-cardBorder bg-bgElevated px-3 text-sm text-textPrimary" />
+            <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="Icon emoji" className="h-10 rounded-lg border border-cardBorder bg-bgElevated px-3 text-sm text-textPrimary" />
+          </div>
+          <Button type="submit">Create category</Button>
+        </form>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {categories.map((c) => (
@@ -37,7 +66,7 @@ export default function CategoriesPage() {
               </button>
             </div>
             <p className="mt-2 text-xs text-textMuted">/{c.slug}</p>
-            <p className="mt-3 text-sm text-textSecondary">{c.postsCount.toLocaleString()} posts</p>
+            <p className="mt-3 text-sm text-textSecondary">{(c._count?.posts ?? 0).toLocaleString()} posts</p>
           </div>
         ))}
       </div>
