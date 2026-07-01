@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
-import { users as initialUsers, UserStatus } from '../data/mockData';
+import { listUsers } from '../api/users';
+import { suspendUser, banUser, reactivateUser } from '../api/users';
+import type { AdminUser } from '../api/auth';
+
+type UserStatus = AdminUser['status'];
 
 const STATUS_VARIANT: Record<UserStatus, 'success' | 'warning' | 'danger'> = {
   ACTIVE: 'success',
@@ -11,17 +15,24 @@ const STATUS_VARIANT: Record<UserStatus, 'success' | 'warning' | 'danger'> = {
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [query, setQuery] = useState('');
 
-  const filtered = users.filter(
-    (u) => u.name.toLowerCase().includes(query.toLowerCase()) || u.email.toLowerCase().includes(query.toLowerCase()),
-  );
+  const load = () => listUsers(query || undefined).then(setUsers).catch(console.error);
 
-  const updateStatus = (id: string, status: UserStatus) => {
-    // TODO: call PATCH /api/users/:id/suspend or /ban or /verify
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)));
+  useEffect(() => {
+    const timer = setTimeout(load, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const updateStatus = async (id: string, action: 'suspend' | 'ban' | 'reactivate') => {
+    if (action === 'suspend') await suspendUser(id);
+    else if (action === 'ban') await banUser(id);
+    else await reactivateUser(id);
+    load();
   };
+
+  const filtered = users;
 
   return (
     <div className="space-y-6">
@@ -38,7 +49,6 @@ export default function UsersPage() {
         />
       </div>
 
-      {/* Desktop table */}
       <div className="hidden overflow-hidden rounded-xl2 border border-cardBorder bg-card md:block">
         <table className="w-full text-sm">
           <thead>
@@ -60,28 +70,14 @@ export default function UsersPage() {
                   </div>
                   <p className="text-xs text-textMuted">{u.email}</p>
                 </td>
-                <td className="px-5 py-3">
-                  <Badge label={u.status} variant={STATUS_VARIANT[u.status]} />
-                </td>
-                <td className="px-5 py-3 text-textSecondary">{u.reputation.toLocaleString()}</td>
-                <td className="px-5 py-3 text-textSecondary">{u.joined}</td>
+                <td className="px-5 py-3"><Badge label={u.status} variant={STATUS_VARIANT[u.status]} /></td>
+                <td className="px-5 py-3 text-textSecondary">{u.reputationPoints.toLocaleString()}</td>
+                <td className="px-5 py-3 text-textSecondary">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="px-5 py-3 text-right">
                   <div className="flex justify-end gap-2">
-                    {u.status !== 'SUSPENDED' && (
-                      <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'SUSPENDED')}>
-                        Suspend
-                      </Button>
-                    )}
-                    {u.status !== 'BANNED' && (
-                      <Button size="sm" variant="danger" onClick={() => updateStatus(u.id, 'BANNED')}>
-                        Ban
-                      </Button>
-                    )}
-                    {u.status !== 'ACTIVE' && (
-                      <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'ACTIVE')}>
-                        Reactivate
-                      </Button>
-                    )}
+                    {u.status !== 'SUSPENDED' && <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'suspend')}>Suspend</Button>}
+                    {u.status !== 'BANNED' && <Button size="sm" variant="danger" onClick={() => updateStatus(u.id, 'ban')}>Ban</Button>}
+                    {u.status !== 'ACTIVE' && <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'reactivate')}>Reactivate</Button>}
                   </div>
                 </td>
               </tr>
@@ -90,7 +86,6 @@ export default function UsersPage() {
         </table>
       </div>
 
-      {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
         {filtered.map((u) => (
           <div key={u.id} className="rounded-xl2 border border-cardBorder bg-card p-4">
@@ -102,26 +97,10 @@ export default function UsersPage() {
               <Badge label={u.status} variant={STATUS_VARIANT[u.status]} />
             </div>
             <p className="mt-1 text-xs text-textMuted">{u.email}</p>
-            <div className="mt-2 flex justify-between text-xs text-textSecondary">
-              <span>{u.reputation.toLocaleString()} reputation</span>
-              <span>Joined {u.joined}</span>
-            </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {u.status !== 'SUSPENDED' && (
-                <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'SUSPENDED')}>
-                  Suspend
-                </Button>
-              )}
-              {u.status !== 'BANNED' && (
-                <Button size="sm" variant="danger" onClick={() => updateStatus(u.id, 'BANNED')}>
-                  Ban
-                </Button>
-              )}
-              {u.status !== 'ACTIVE' && (
-                <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'ACTIVE')}>
-                  Reactivate
-                </Button>
-              )}
+              {u.status !== 'SUSPENDED' && <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'suspend')}>Suspend</Button>}
+              {u.status !== 'BANNED' && <Button size="sm" variant="danger" onClick={() => updateStatus(u.id, 'ban')}>Ban</Button>}
+              {u.status !== 'ACTIVE' && <Button size="sm" variant="secondary" onClick={() => updateStatus(u.id, 'reactivate')}>Reactivate</Button>}
             </div>
           </div>
         ))}

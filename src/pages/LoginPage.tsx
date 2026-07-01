@@ -1,21 +1,36 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { login, getMe } from '../api/auth';
+import { ApiError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { refresh } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // TODO: call POST /api/auth/login, then verify role === 'ADMIN' before granting access
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+    try {
+      await login(email, password);
+      const me = await getMe();
+      if (me.role !== 'ADMIN') {
+        setError('Access denied. Admin role required.');
+        return;
+      }
+      await refresh();
       navigate('/');
-    }, 700);
+    } catch (err) {
+      setError(err instanceof ApiError ? 'Invalid credentials or server error.' : 'Sign in failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,6 +45,8 @@ export default function LoginPage() {
 
         <h1 className="text-xl font-bold text-textPrimary">Sign in</h1>
         <p className="mt-1 text-sm text-textSecondary">Admin and moderator access only.</p>
+
+        {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
         <div className="mt-6 space-y-4">
           <div>

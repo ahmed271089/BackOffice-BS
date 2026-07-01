@@ -1,32 +1,46 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: "class", // Enable dark mode with class strategy
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        bg: '#0B0E16',
-        bgElevated: '#12151F',
-        card: '#161A26',
-        cardBorder: '#22273A',
+        // Light & Dark mode colors using CSS variables
+        bg: "var(--color-bg)",
+        bgElevated: "var(--color-bg-elevated)",
+        card: "var(--color-card)",
+        cardBorder: "var(--color-card-border)",
         primary: {
-          DEFAULT: '#6C5CE7',
-          muted: '#2A2550',
-          light: '#8B7CF6',
+          DEFAULT: "var(--color-primary)",
+          muted: "var(--color-primary-muted)",
+          light: "var(--color-primary-light)",
         },
-        secondary: '#3B82F6',
-        textPrimary: '#F4F5F8',
-        textSecondary: '#9AA1B5',
-        textMuted: '#5C6178',
-        success: { DEFAULT: '#22C55E', muted: '#10301F' },
-        warning: { DEFAULT: '#F59E0B', muted: '#3A2A0E' },
-        danger: { DEFAULT: '#EF4444', muted: '#3A1414' },
-        info: { DEFAULT: '#3B82F6', muted: '#142235' },
+        secondary: "var(--color-secondary)",
+        textPrimary: "var(--color-text-primary)",
+        textSecondary: "var(--color-text-secondary)",
+        textMuted: "var(--color-text-muted)",
+        success: {
+          DEFAULT: "var(--color-success)",
+          muted: "var(--color-success-muted)",
+        },
+        warning: {
+          DEFAULT: "var(--color-warning)",
+          muted: "var(--color-warning-muted)",
+        },
+        danger: {
+          DEFAULT: "var(--color-danger)",
+          muted: "var(--color-danger-muted)",
+        },
+        info: {
+          DEFAULT: "var(--color-info)",
+          muted: "var(--color-info-muted)",
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ["Inter", "system-ui", "sans-serif"],
       },
       borderRadius: {
-        xl2: '20px',
+        xl2: "20px",
       },
     },
   },
