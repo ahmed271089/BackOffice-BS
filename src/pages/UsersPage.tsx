@@ -17,8 +17,23 @@ const STATUS_VARIANT: Record<UserStatus, 'success' | 'warning' | 'danger'> = {
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = () => listUsers(query || undefined).then(setUsers).catch(console.error);
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listUsers(query || undefined);
+      setUsers(data);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to load users';
+      setError(msg);
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(load, 300);
@@ -49,8 +64,27 @@ export default function UsersPage() {
         />
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl2 border border-cardBorder bg-card md:block">
-        <table className="w-full text-sm">
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-cardBorder border-t-primary"></div>
+        </div>
+      )}
+
+      {!loading && filtered.length === 0 && (
+        <div className="rounded-lg border border-cardBorder bg-card p-8 text-center text-textMuted">
+          No users found
+        </div>
+      )}
+
+      {!loading && (
+        <div className="hidden overflow-hidden rounded-xl2 border border-cardBorder bg-card md:block">
+          <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-cardBorder text-left text-xs uppercase text-textMuted">
               <th className="px-5 py-3">User</th>
@@ -84,9 +118,11 @@ export default function UsersPage() {
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      )}
 
-      <div className="space-y-3 md:hidden">
+      {!loading && (
+        <div className="space-y-3 md:hidden">
         {filtered.map((u) => (
           <div key={u.id} className="rounded-xl2 border border-cardBorder bg-card p-4">
             <div className="flex items-center justify-between">
@@ -104,7 +140,8 @@ export default function UsersPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
