@@ -7,6 +7,7 @@ export interface ReportItem {
   targetAuthorId: string;
   title: string;
   reason: string;
+  details?: string;
   status: string;
   reportedBy: string;
   submittedBy: string;

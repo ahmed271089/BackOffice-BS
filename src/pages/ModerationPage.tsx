@@ -28,7 +28,7 @@ export default function ModerationPage() {
     setSelectedReportId(id);
     setSelectedDetails(null);
     try {
-      const { data } = await getReportDetails(id);
+      const data = await getReportDetails(id);
       setSelectedDetails(data);
     } catch (err) {
       console.error(err);
@@ -123,7 +123,9 @@ export default function ModerationPage() {
                 {tab === 'PENDING' && (
                   <>
                     <Button variant="secondary" onClick={() => resolve(item.id, 'DISMISSED')}>Dismiss</Button>
-                    <Button variant="danger" onClick={() => resolve(item.id, 'ACTION_TAKEN')}>Hide Content</Button>
+                    <Button variant="danger" onClick={() => resolve(item.id, 'ACTION_TAKEN')}>
+                      {item.type === 'USER' ? 'Suspend User' : 'Hide Content'}
+                    </Button>
                     <select 
                       className="bg-surface p-2 text-sm text-textPrimary rounded-lg border border-cardBorder outline-none"
                       onChange={(e) => {
@@ -230,7 +232,9 @@ export default function ModerationPage() {
                   )}
                   <Button variant="secondary" onClick={() => setSelectedReportId(null)}>Close</Button>
                   {tab === 'PENDING' && (
-                    <Button variant="danger" onClick={() => resolve(selectedReportId, 'ACTION_TAKEN')}>Hide Content</Button>
+                    <Button variant="danger" onClick={() => resolve(selectedReportId, 'ACTION_TAKEN')}>
+                      {selectedDetails.type === 'USER' ? 'Suspend User' : 'Hide Content'}
+                    </Button>
                   )}
                 </div>
               </div>
